@@ -32,6 +32,7 @@ function! SplitestRun()
 	" Adding some special config to that window
 	execute 'au BufDelete <buffer> let g:SplitestOpenedTests["'.filepath.'"] = 0'
 	set readonly
+	set wrap
 	nnoremap <silent> <buffer> q :quit!<CR>
 	nnoremap <silent> <buffer> <C-D> :quit!<CR>
 	nnoremap <silent> <buffer> <F5> :quit!<CR>
