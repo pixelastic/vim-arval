@@ -1,0 +1,9 @@
+The features of Splitest used to live in my vimrc file, but I decided to pack
+it as a plugin to make it easier to install and try.
+
+This is a very simple plugin that will run tests of the current file and
+display them in a split windows when pressing F5. This will of course also work
+when editing the test file itself.
+
+Currently Splitest only works for ruby, and your test files need to be in
+a `./tests` subdirectories and named `*.test.rb`.
