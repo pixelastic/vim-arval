@@ -1,11 +1,19 @@
 " SplitestGetTestFile {{{
 " Return the matching test file for a given filepath
 function! SplitestGetTestFile(filepath) 
-	let filepath = expand(a:filepath)
+	let filepath = fnamemodify(a:filepath, ':p')
 
 	" This is itself a test
 	if filepath =~ '.test.rb$'
 		return filepath
+	endif
+
+	" Search for ./tests/{foo}.test.rb
+	let dirname=fnamemodify(filepath, ':p:h')
+	let basename=fnamemodify(filepath, ':t:r')
+	let subtestfile=dirname.'/tests/'.basename.'.test.rb'
+	if filereadable(subtestfile)
+		return subtestfile
 	endif
 
 	return ''
