@@ -1,19 +1,14 @@
 " Arval
 " Vim plugin to know if the file you're editing passes its tests or not.
 
-" 
-" Script Initialization
-" {{{
+" Script Initialization {{{
 
 " The only method you'll ever need to call.
 command! ArvalTest call s:GetTestResults()
 
 " }}}
 
-
-"
-" Buffer Initialization
-" {{{
+" Buffer Initialization {{{
 augroup arval_bufer
 	" Load filetype-specific functions on each buffer
 	autocmd BufReadPost * call s:LoadFiletypeConfig(&ft)
@@ -41,9 +36,7 @@ endfunction
 
 " }}}
 
-" 
-" Public Functions
-" {{{
+" Public Functions {{{
 
 function! s:GetTestResults()
 	let testfile = s:GetTestFile(expand('%'), &ft)
@@ -52,9 +45,7 @@ endfunction
 
 " }}}
 
-
-" Private Functions
-" {{{
+" Private Functions {{{
 
 function! s:GetTestFile(file, ft) " {{{
 	" Returns path to the test file associated to the current file.

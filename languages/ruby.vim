@@ -6,6 +6,13 @@ if exists('g:arval_ruby_loaded')
 endif
 let g:arval_ruby_loaded = 1
 
-function! Arval_GetTestFile_ruby(filepath)
-	return '~/.vimrc'
-endfunction
+" Do not overwrite possible user-defined method
+if !exists('Arval_GetTestFile_ruby')
+	" This is where you should define a custom method to get the file test for
+	" a given filepath. I do not add one here because Arval will default to its
+	" own search function if no filetype-specific function is defined.
+	"
+	" function! Arval_GetTestFile_ruby(filepath)
+	"
+	" endfunction
+endif
