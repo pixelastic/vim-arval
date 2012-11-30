@@ -12,6 +12,8 @@ command! ArvalTest call s:ArvalTest()
 augroup arval_bufer
 	" Load filetype-specific functions on each buffer
 	autocmd BufReadPost * call s:LoadFiletypeConfig(&ft)
+	" Init default values for statusline
+	autocmd BufReadPost * let b:arval_test_pass = -1
 augroup END
 
 function! s:LoadFiletypeConfig(ft) " {{{
@@ -38,7 +40,7 @@ endfunction
 
 " Public Functions {{{
 
-function! s:ArvalTest()
+function! s:ArvalTest() " {{{
 	let ft = &ft
 
 	" First, check for a test file
@@ -55,16 +57,18 @@ function! s:ArvalTest()
 		return
 	endif
 
-	" Finally, parse the results in a know format
+	" Finally, parse the results in a known format
 	let testresults = s:GetTestResults(testcommand, ft)
-	if testresults ==? ''
+	if type(testresults) == 1 && testresults ==? ''
 		echo "Unable to parse test results, no parser found"
 		return
 	endif
 
-	echo testresults
+	" Set a buffer variable indicating if tests passes or not
+	let b:arval_test_pass = testresults['pass']
 
 endfunction
+" }}}
 
 " }}}
 
@@ -142,7 +146,7 @@ function! s:GetTestCommand(file, ft) " {{{
 endfunction
 " }}}
 
-function! s:GetTestResults(command, ft)
+function! s:GetTestResults(command, ft) " {{{
 	" Will execute the shell command, parse it and return and associative array
 	" containing all valuable results
 	
@@ -160,4 +164,6 @@ function! s:GetTestResults(command, ft)
 
 	return testresult
 endfunction
+" }}}
+
 " }}}
