@@ -20,3 +20,11 @@ endif
 function! Arval_GetTestCommand_ruby(filepath)
 	return 'ruby ' . a:filepath
 endfunction
+
+function! Arval_ParseRawOutput_ruby(output)
+	echo "--------------"
+	echo a:output
+	echo "--------------"
+
+	return "ok"
+endfunction

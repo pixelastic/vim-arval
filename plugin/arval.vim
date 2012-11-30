@@ -39,22 +39,29 @@ endfunction
 " Public Functions {{{
 
 function! s:ArvalTest()
+	let ft = &ft
+
 	" First, check for a test file
-	let testfile = s:GetTestFile(expand('%'), &ft)
+	let testfile = s:GetTestFile(expand('%'), ft)
 	if testfile ==? ''
 		echo "No test file found."
 		return
 	endif
 
 	" Then, how to run it
-	let testcommand = s:GetTestCommand(testfile, &ft)
+	let testcommand = s:GetTestCommand(testfile, ft)
 	if testcommand ==? ''
 		echo "Unable to run tests on file, no command found."
 		return
 	endif
 
 	" Finally, parse the results in a know format
-	let testresults = s:GetTestResults(testcommand)
+	let testresults = s:GetTestResults(testcommand, ft)
+	if testresults ==? ''
+		echo "Unable to parse test results, no parser found"
+		return
+	endif
+
 	echo testresults
 
 endfunction
@@ -135,8 +142,22 @@ function! s:GetTestCommand(file, ft) " {{{
 endfunction
 " }}}
 
-function! s:GetTestResults(command)
-	execute "let rawresult = system('". a:command . "')"
-	echo rawresult
+function! s:GetTestResults(command, ft)
+	" Will execute the shell command, parse it and return and associative array
+	" containing all valuable results
+	
+	" No need to go further if we do not have the method to parse the raw output
+	let ftfunction = "Arval_ParseRawOutput_" . a:ft
+	if !exists('*' . ftfunction)
+		return ''
+	endif
+
+	" Get raw result from the command output
+	execute 'let rawresult = system('. shellescape(a:command) . ')'
+
+	" Parse the command
+	execute 'let testresult = ' . ftfunction . "('" . escape(rawresult, "'") . "')"
+
+	return testresult
 endfunction
 " }}}
