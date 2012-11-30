@@ -1,15 +1,16 @@
 What is it ?
 ============
 
-Splitest is a very simple plugin that should allow you to run tests from your
-files in a very easy way.
+Arval is a vim plugin that will help you easily run tests of your file. When
+editing a file, Arval locates associated test files and you can run them with
+`<F6>`.
 
-Simply press `F5` when editing a test file and you'll see the
-test results displayed in a split window. Press `F5` again, `q` or `Ctrl+D` and the
-split window will close.
+This will in turn update a buffer variable indicating if the tests passed or
+not, that you can in turn use in your statusbar. If tests failed, this will
+also tell you which one.
 
 Languages
 =========
 
-So far Splitest only works for Ruby files, but I might extend it later for
-other languages.
+So far Arval only works with Ruby files, but is build in such a way that
+separate language files can be added.
