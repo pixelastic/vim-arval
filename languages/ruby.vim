@@ -6,4 +6,6 @@ if exists('g:arval_ruby_loaded')
 endif
 let g:arval_ruby_loaded = 1
 
-
+function! Arval_GetTestFile_ruby(filepath)
+	return '~/.vimrc'
+endfunction

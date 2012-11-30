@@ -64,16 +64,20 @@ function! s:GetTestFile(file, ft) " {{{
 	" Will only return a filepath if the file exists, anyway.
 	
 	let testfile = ''
-	let ftfunction = 's:GetTestFile_ '. a:ft
+	let fullpath = fnamemodify(a:file, ':p')
+	let ftfunction = 'Arval_GetTestFile_'. a:ft
 	
 	" Try methods in order
 	if exists('*b:ArvalGetTestFile')
-		let testfile = b:ArvalGetTestFile(a:file)
+		let testfile = b:ArvalGetTestFile(fullpath)
 	elseif exists('*' . ftfunction)
-		execute 'let testfile = '. ftfunction . '(' . a:file . ')'
+		execute 'let testfile = '. ftfunction . "('" . fullpath . "')"
 	else
-		let testfile = s:GetTestFile_default(a:file)
+		let testfile = s:GetTestFile_default(fullpath)
 	endif
+
+	" Expand testfile one last time to be sure to have a full path
+	let testfile = fnamemodify(testfile, ':p')
 
 	" Return only if readable
 	if (testfile ==? '' || !filereadable(testfile))
