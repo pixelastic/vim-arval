@@ -4,7 +4,7 @@
 " Script Initialization {{{
 
 " The only method you'll ever need to call.
-command! ArvalTest call s:GetTestResults()
+command! ArvalTest call s:ArvalTest()
 
 " }}}
 
@@ -38,9 +38,25 @@ endfunction
 
 " Public Functions {{{
 
-function! s:GetTestResults()
+function! s:ArvalTest()
+	" First, check for a test file
 	let testfile = s:GetTestFile(expand('%'), &ft)
-	echo testfile
+	if testfile ==? ''
+		echo "No test file found."
+		return
+	endif
+
+	" Then, how to run it
+	let testcommand = s:GetTestCommand(testfile, &ft)
+	if testcommand ==? ''
+		echo "Unable to run tests on file, no command found."
+		return
+	endif
+
+	" Finally, parse the results in a know format
+	let testresults = s:GetTestResults(testcommand)
+	echo testresults
+
 endfunction
 
 " }}}
@@ -78,7 +94,6 @@ function! s:GetTestFile(file, ft) " {{{
 	return testfile
 endfunction
 " }}}
-
 function! s:GetTestFile_default(file) " {{{
 	" First look for a filename.test.ext, then for a tests/filename.test.ext
 	
@@ -105,4 +120,23 @@ function! s:GetTestFile_default(file) " {{{
 endfunction
 " }}}
 
+function! s:GetTestCommand(file, ft) " {{{
+	" Will return the shell command to run the tests and get the output.
+	" A Arval_GetTestCommand_{ft}() function must be defined.
+	
+	let fullpath = fnamemodify(a:file, ':p')
+	let ftfunction = 'Arval_GetTestCommand_' . a:ft
+	if !exists('*'.ftfunction)
+		return ''
+	endif
+
+	execute 'let testcommand = ' . ftfunction . "('" . fullpath . "')"
+	return testcommand
+endfunction
+" }}}
+
+function! s:GetTestResults(command)
+	execute "let rawresult = system('". a:command . "')"
+	echo rawresult
+endfunction
 " }}}

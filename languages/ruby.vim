@@ -16,3 +16,7 @@ if !exists('Arval_GetTestFile_ruby')
 	"
 	" endfunction
 endif
+
+function! Arval_GetTestCommand_ruby(filepath)
+	return 'ruby ' . a:filepath
+endfunction
