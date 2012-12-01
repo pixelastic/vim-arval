@@ -160,7 +160,8 @@ function! s:GetTestResults(command, ft) " {{{
 	execute 'let rawresult = system('. shellescape(a:command) . ')'
 
 	" Parse the command
-	execute 'let testresult = ' . ftfunction . "('" . escape(rawresult, "'") . "')"
+	let rawresult = substitute(rawresult, "'", "''", "g")
+	execute 'let testresult = ' . ftfunction . "('" . rawresult . "')" 
 
 	return testresult
 endfunction
