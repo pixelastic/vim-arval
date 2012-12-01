@@ -121,7 +121,6 @@ function! Arval_ParseRawOutput_ruby(output) " {{{
 
 				" For line number and function, we need to parse i+1
 				let overview = lines[i+1]
-				echo overview
 				let commaList = substitute(overview, '\v^(.*)\(.*\[(.[^:]*):(\d+)\]:', '\1,\2,\3', '')
 				let list = split(commaList, ',')
 				let message['line'] = list[2]

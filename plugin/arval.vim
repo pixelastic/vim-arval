@@ -5,6 +5,7 @@
 
 " The only method you'll ever need to call.
 command! ArvalTest call s:ArvalTest()
+command! ArvalDisplayMessages call s:ArvalDisplayMessages()
 
 " }}}
 
@@ -66,9 +67,41 @@ function! s:ArvalTest() " {{{
 
 	" Set a buffer variable indicating if tests passes or not
 	let b:arval_test_pass = testresults['pass']
+	" Also expose the test results to anyone
+	let b:arval_test_results = testresults
+
+	" Display errors to users
+	if testresults['pass'] == 0 && len(testresults['messages']) > 0
+		call s:ArvalDisplayMessages()
+	endif
 
 endfunction
 " }}}
+
+function! s:ArvalDisplayMessages()
+	" Nothing to display
+	if !exists('b:arval_test_results') || len(b:arval_test_results['messages']) == 0
+		return
+	endif
+
+	" Nothing to do either if already opened
+	if s:IsMessageWindowOpen(expand('%'))
+		return
+	endif
+
+	let messages = b:arval_test_results['messages']
+
+	" Open a split window to display a max of 2 messages
+	let height = min([4, 2 * len(messages)])
+	call s:OpenEmptyMessageWindow(height)
+
+	" Append text and go back to main window
+	call append(0, s:GetMessageLines(messages))
+	" normal GD
+	" set readonly
+	normal gg
+	wincmd k
+endfunction
 
 " }}}
 
@@ -166,5 +199,40 @@ function! s:GetTestResults(command, ft) " {{{
 	return testresult
 endfunction
 " }}}
+
+function! s:IsMessageWindowOpen(file) " {{{
+	" Decide if we need to open a new message window or if it is already opened
+	return 0
+endfunction
+" }}}
+function! s:GetMessageLines(messages) " {{{
+	" Return a List containing all the lines to display in the split window
+	let text = []
+	for message in a:messages
+		let line1 = toupper(strpart(message['type'], 0, 1)) . ':' . message['line'] . ' ' . message['function']
+		let line2 = message['text']
+		call add(text, line1)
+		call add(text, line2)
+	endfor
+	return text
+endfunction
+" }}}
+function! s:OpenEmptyMessageWindow(height) " {{{
+	" Open a new split window to display the messages
+	rightbelow new
+	" Set the height
+	execute 'resize ' . a:height
+	" Hide statusbar and line number
+	setlocal laststatus=0
+	setlocal statusline=''
+	setlocal noruler
+	setlocal nonumber
+	" Close it with q
+	nnoremap <silent> <buffer> q :quit!<CR>
+endfunction
+" }}}
+
+" }}}
+
 
 " }}}
