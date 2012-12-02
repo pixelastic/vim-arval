@@ -7,6 +7,9 @@
 command! ArvalTest call s:ArvalTest()
 command! ArvalDisplayMessages call s:ArvalDisplayMessages()
 
+" Stores information about which message windows are currently opened
+let g:arval_opened_message_windows = {}
+
 " }}}
 
 " Buffer Initialization {{{
@@ -93,13 +96,11 @@ function! s:ArvalDisplayMessages()
 
 	" Open a split window to display a max of 2 messages
 	let height = min([4, 2 * len(messages)])
-	call s:OpenEmptyMessageWindow(height)
+	call s:OpenEmptyMessageWindow(height, expand('%:p'))
 
 	" Append text and go back to main window
 	call append(0, s:GetMessageLines(messages))
-	" normal GD
-	" set readonly
-	normal gg
+	normal Gddgg
 	wincmd k
 endfunction
 
@@ -200,9 +201,15 @@ function! s:GetTestResults(command, ft) " {{{
 endfunction
 " }}}
 
-function! s:IsMessageWindowOpen(file) " {{{
+function! s:RegisterOpenedMessageWindow(filepath, status) " {{{
+	" Save window message status of given filepath
+	let g:arval_opened_message_windows[a:filepath] = a:status
+endfunction
+" }}}
+function! s:IsMessageWindowOpen(filepath) " {{{
 	" Decide if we need to open a new message window or if it is already opened
-	return 0
+	let filepath = fnamemodify(a:filepath, ':p')
+	return get(g:arval_opened_message_windows, filepath, 0)
 endfunction
 " }}}
 function! s:GetMessageLines(messages) " {{{
@@ -217,9 +224,11 @@ function! s:GetMessageLines(messages) " {{{
 	return text
 endfunction
 " }}}
-function! s:OpenEmptyMessageWindow(height) " {{{
+function! s:OpenEmptyMessageWindow(height, filepath) " {{{
 	" Open a new split window to display the messages
 	rightbelow new
+	" Mark it as opened
+	call s:RegisterOpenedMessageWindow(a:filepath, 1)
 	" Set the height
 	execute 'resize ' . a:height
 	" Hide statusbar and line number
@@ -229,6 +238,10 @@ function! s:OpenEmptyMessageWindow(height) " {{{
 	setlocal nonumber
 	" Close it with q
 	nnoremap <silent> <buffer> q :quit!<CR>
+	nnoremap <silent> <buffer> <C-D> :quit!<CR>
+	nnoremap <silent> <buffer> <Esc> :quit!<CR>
+	" Mark it as closed when closed
+	execute 'au BufDelete <buffer> call s:RegisterOpenedMessageWindow(''' . a:filepath . ''', 0)'
 endfunction
 " }}}
 
