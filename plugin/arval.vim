@@ -206,9 +206,30 @@ function! s:DisplayMessageWindow() " {{{
 	wincmd k
 endfunction
 " }}}
-function! s:CloseMessageWindow() " {{{
-		wincmd j
-		execute 'quit!'	
+function! s:OpenEmptyMessageWindow(height) " {{{
+	let filepath = expand('%:p')
+	" Open a new split window to display the messages
+	rightbelow new
+	" Mark it as opened
+	call s:RegisterOpenedMessageWindow(filepath, 1)
+	" Set the height
+	execute 'resize ' . a:height
+	" Hide statusbar and line number
+	setlocal laststatus=0
+	setlocal statusline=''
+	setlocal noruler
+	setlocal nonumber
+	" Close it with q
+	nnoremap <silent> <buffer> q :quit!<CR>
+	nnoremap <silent> <buffer> <C-D> :quit!<CR>
+	nnoremap <silent> <buffer> <Esc> :quit!<CR>
+	" Mark it as closed when closed
+	execute 'au BufDelete <buffer> call s:RegisterOpenedMessageWindow(''' . filepath . ''', 0)'
+endfunction
+" }}}
+function! s:IsMessageWindowOpened() " {{{
+	" Decide if we need to open a new message window or if it is already opened
+	return get(g:arval_opened_message_windows, expand('%:p'), 0)
 endfunction
 " }}}
 function! s:RegisterOpenedMessageWindow(filepath, status) " {{{
@@ -216,10 +237,9 @@ function! s:RegisterOpenedMessageWindow(filepath, status) " {{{
 	let g:arval_opened_message_windows[a:filepath] = a:status
 endfunction
 " }}}
-function! s:IsMessageWindowOpened() " {{{
-	" Decide if we need to open a new message window or if it is already opened
-	let filepath = expand('%:p')
-	return get(g:arval_opened_message_windows, filepath, 0)
+function! s:CloseMessageWindow() " {{{
+		wincmd j
+		execute 'quit!'	
 endfunction
 " }}}
 function! s:GetMessageLines(messages) " {{{
@@ -234,26 +254,5 @@ function! s:GetMessageLines(messages) " {{{
 	return text
 endfunction
 " }}}
-function! s:OpenEmptyMessageWindow(height, filepath) " {{{
-	" Open a new split window to display the messages
-	rightbelow new
-	" Mark it as opened
-	call s:RegisterOpenedMessageWindow(a:filepath, 1)
-	" Set the height
-	execute 'resize ' . a:height
-	" Hide statusbar and line number
-	setlocal laststatus=0
-	setlocal statusline=''
-	setlocal noruler
-	setlocal nonumber
-	" Close it with q
-	nnoremap <silent> <buffer> q :quit!<CR>
-	nnoremap <silent> <buffer> <C-D> :quit!<CR>
-	nnoremap <silent> <buffer> <Esc> :quit!<CR>
-	" Mark it as closed when closed
-	execute 'au BufDelete <buffer> call s:RegisterOpenedMessageWindow(''' . a:filepath . ''', 0)'
-endfunction
-" }}}
 
-" }}}
 
