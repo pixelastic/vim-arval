@@ -2,14 +2,8 @@
 " Vim plugin to know if the file you're editing passes its tests or not.
 
 " Script Initialization {{{
-
-" The only method you'll ever need to call.
-command! ArvalTest call s:ArvalTest()
-command! ArvalDisplayMessages call s:ArvalDisplayMessages()
-
 " Stores information about which message windows are currently opened
 let g:arval_opened_message_windows = {}
-
 " }}}
 
 " Buffer Initialization {{{
@@ -39,20 +33,28 @@ function! s:LoadFiletypeConfig(ft) " {{{
 	return 1
 endfunction
 " }}}
-
 " }}}
 
 " Public Functions {{{
+
+" Exposed commands
+command! ArvalTest call s:TestCurrentFile()
+command! ArvalDisplayMessageWindow call s:DisplayMessageWindow()
 
 function! ArvalGetTestFile() " {{{
 	return s:GetTestFile(expand('%:p'), &ft)
 endfunction
 " }}}
-function! s:ArvalTest() " {{{
+
+" }}}
+
+
+function! s:TestCurrentFile() " {{{
+	let filepath = expand('%:p')
 	let ft = &ft
 
 	" First, check for a test file
-	let testfile = s:GetTestFile(expand('%'), ft)
+	let testfile = s:GetTestFile(filepath, ft)
 	if testfile ==? ''
 		echo "No test file found."
 		return
@@ -79,39 +81,16 @@ function! s:ArvalTest() " {{{
 
 	" Display errors to users
 	if testresults['pass'] == 0 && len(testresults['messages']) > 0
-		call s:ArvalDisplayMessages()
+		call s:DisplayMessageWindow()
+	endif
+
+	" Hide errors if tests pass
+	if testresults['pass'] == 1 && s:IsMessageWindowOpened() == 1
+		call s:CloseMessageWindow()
 	endif
 
 endfunction
 " }}}
-function! s:ArvalDisplayMessages() " {{{
-	" Nothing to display
-	if !exists('b:arval_test_results') || len(b:arval_test_results['messages']) == 0
-		return
-	endif
-
-	" Closing the window if already opened
-	if s:IsMessageWindowOpen(expand('%'))
-		wincmd j
-		execute 'quit!'	
-	endif
-
-	let messages = b:arval_test_results['messages']
-
-	" Open a split window to display a max of 2 messages
-	let height = min([4, 2 * len(messages)])
-	call s:OpenEmptyMessageWindow(height, expand('%:p'))
-
-	" Append text and go back to main window
-	call append(0, s:GetMessageLines(messages))
-	normal Gddgg
-	wincmd k
-endfunction
-" }}}
-
-" }}}
-
-" Private Functions {{{
 
 function! s:GetTestFile(file, ft) " {{{
 	" Returns path to the test file associated to the current file.
@@ -169,7 +148,6 @@ function! s:GetTestFile_default(file) " {{{
 
 endfunction
 " }}}
-
 function! s:GetTestCommand(file, ft) " {{{
 	" Will return the shell command to run the tests and get the output.
 	" A Arval_GetTestCommand_{ft}() function must be defined.
@@ -184,7 +162,6 @@ function! s:GetTestCommand(file, ft) " {{{
 	return testcommand
 endfunction
 " }}}
-
 function! s:GetTestResults(command, ft) " {{{
 	" Will execute the shell command, parse it and return and associative array
 	" containing all valuable results
@@ -206,14 +183,42 @@ function! s:GetTestResults(command, ft) " {{{
 endfunction
 " }}}
 
+function! s:DisplayMessageWindow() " {{{
+	" Nothing to display
+	if !exists('b:arval_test_results') || len(b:arval_test_results['messages']) == 0
+		return
+	endif
+
+	" Closing the window if already opened
+	if s:IsMessageWindowOpened()
+		call s:CloseMessageWindow()
+	endif
+
+	let messages = b:arval_test_results['messages']
+
+	" Open a split window to display a max of 2 messages
+	let height = min([4, 2 * len(messages)])
+	call s:OpenEmptyMessageWindow(height, expand('%:p'))
+
+	" Append text and go back to main window
+	call append(0, s:GetMessageLines(messages))
+	normal Gddgg
+	wincmd k
+endfunction
+" }}}
+function! s:CloseMessageWindow() " {{{
+		wincmd j
+		execute 'quit!'	
+endfunction
+" }}}
 function! s:RegisterOpenedMessageWindow(filepath, status) " {{{
 	" Save window message status of given filepath
 	let g:arval_opened_message_windows[a:filepath] = a:status
 endfunction
 " }}}
-function! s:IsMessageWindowOpen(filepath) " {{{
+function! s:IsMessageWindowOpened() " {{{
 	" Decide if we need to open a new message window or if it is already opened
-	let filepath = fnamemodify(a:filepath, ':p')
+	let filepath = expand('%:p')
 	return get(g:arval_opened_message_windows, filepath, 0)
 endfunction
 " }}}
@@ -252,5 +257,3 @@ endfunction
 
 " }}}
 
-
-" }}}
