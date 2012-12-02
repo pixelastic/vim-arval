@@ -13,7 +13,7 @@ let g:arval_opened_message_windows = {}
 " }}}
 
 " Buffer Initialization {{{
-augroup arval_bufer
+augroup arval_buffer
 	" Load filetype-specific functions on each buffer
 	autocmd BufReadPost * call s:LoadFiletypeConfig(&ft)
 	" Init default values for statusline
@@ -44,6 +44,10 @@ endfunction
 
 " Public Functions {{{
 
+function! ArvalGetTestFile() " {{{
+	return s:GetTestFile(expand('%:p'), &ft)
+endfunction
+" }}}
 function! s:ArvalTest() " {{{
 	let ft = &ft
 
@@ -80,16 +84,16 @@ function! s:ArvalTest() " {{{
 
 endfunction
 " }}}
-
-function! s:ArvalDisplayMessages()
+function! s:ArvalDisplayMessages() " {{{
 	" Nothing to display
 	if !exists('b:arval_test_results') || len(b:arval_test_results['messages']) == 0
 		return
 	endif
 
-	" Nothing to do either if already opened
+	" Closing the window if already opened
 	if s:IsMessageWindowOpen(expand('%'))
-		return
+		wincmd j
+		execute 'quit!'	
 	endif
 
 	let messages = b:arval_test_results['messages']
@@ -103,6 +107,7 @@ function! s:ArvalDisplayMessages()
 	normal Gddgg
 	wincmd k
 endfunction
+" }}}
 
 " }}}
 
