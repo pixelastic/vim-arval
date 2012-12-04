@@ -202,7 +202,7 @@ function! s:DisplayMessageWindow() " {{{
 
 	" Append text and go back to main window
 	call append(0, s:GetMessageLines(messages))
-	normal Gddgg
+	normal! Gddgg
 	wincmd k
 endfunction
 " }}}
