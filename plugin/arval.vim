@@ -198,7 +198,7 @@ function! s:DisplayMessageWindow() " {{{
 
 	" Open a split window to display a max of 2 messages
 	let height = min([4, 2 * len(messages)])
-	call s:OpenEmptyMessageWindow(height, expand('%:p'))
+	call s:OpenEmptyMessageWindow(height)
 
 	" Append text and go back to main window
 	call append(0, s:GetMessageLines(messages))
