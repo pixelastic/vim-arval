@@ -2,14 +2,12 @@
 " Vim plugin to know if the file you're editing passes its tests or not.
 
 " Script Initialization {{{
-
-" The only method you'll ever need to call.
-command! ArvalTest call s:ArvalTest()
-
+" Stores information about which message windows are currently opened
+let g:arval_opened_message_windows = {}
 " }}}
 
 " Buffer Initialization {{{
-augroup arval_bufer
+augroup arval_buffer
 	" Load filetype-specific functions on each buffer
 	autocmd BufReadPost * call s:LoadFiletypeConfig(&ft)
 	" Init default values for statusline
@@ -35,16 +33,28 @@ function! s:LoadFiletypeConfig(ft) " {{{
 	return 1
 endfunction
 " }}}
-
 " }}}
 
 " Public Functions {{{
 
-function! s:ArvalTest() " {{{
+" Exposed commands
+command! ArvalTest call s:TestCurrentFile()
+command! ArvalDisplayMessageWindow call s:DisplayMessageWindow()
+
+function! ArvalGetTestFile() " {{{
+	return s:GetTestFile(expand('%:p'), &ft)
+endfunction
+" }}}
+
+" }}}
+
+
+function! s:TestCurrentFile() " {{{
+	let filepath = expand('%:p')
 	let ft = &ft
 
 	" First, check for a test file
-	let testfile = s:GetTestFile(expand('%'), ft)
+	let testfile = s:GetTestFile(filepath, ft)
 	if testfile ==? ''
 		echo "No test file found."
 		return
@@ -66,13 +76,21 @@ function! s:ArvalTest() " {{{
 
 	" Set a buffer variable indicating if tests passes or not
 	let b:arval_test_pass = testresults['pass']
+	" Also expose the test results to anyone
+	let b:arval_test_results = testresults
+
+	" Display errors to users
+	if testresults['pass'] == 0 && len(testresults['messages']) > 0
+		call s:DisplayMessageWindow()
+	endif
+
+	" Hide errors if tests pass
+	if testresults['pass'] == 1 && s:IsMessageWindowOpened() == 1
+		call s:CloseMessageWindow()
+	endif
 
 endfunction
 " }}}
-
-" }}}
-
-" Private Functions {{{
 
 function! s:GetTestFile(file, ft) " {{{
 	" Returns path to the test file associated to the current file.
@@ -130,7 +148,6 @@ function! s:GetTestFile_default(file) " {{{
 
 endfunction
 " }}}
-
 function! s:GetTestCommand(file, ft) " {{{
 	" Will return the shell command to run the tests and get the output.
 	" A Arval_GetTestCommand_{ft}() function must be defined.
@@ -145,7 +162,6 @@ function! s:GetTestCommand(file, ft) " {{{
 	return testcommand
 endfunction
 " }}}
-
 function! s:GetTestResults(command, ft) " {{{
 	" Will execute the shell command, parse it and return and associative array
 	" containing all valuable results
@@ -160,10 +176,83 @@ function! s:GetTestResults(command, ft) " {{{
 	execute 'let rawresult = system('. shellescape(a:command) . ')'
 
 	" Parse the command
-	execute 'let testresult = ' . ftfunction . "('" . escape(rawresult, "'") . "')"
+	let rawresult = substitute(rawresult, "'", "''", "g")
+	execute 'let testresult = ' . ftfunction . "('" . rawresult . "')" 
 
 	return testresult
 endfunction
 " }}}
 
+function! s:DisplayMessageWindow() " {{{
+	" Nothing to display
+	if !exists('b:arval_test_results') || len(b:arval_test_results['messages']) == 0
+		return
+	endif
+
+	" Closing the window if already opened
+	if s:IsMessageWindowOpened()
+		call s:CloseMessageWindow()
+	endif
+
+	let messages = b:arval_test_results['messages']
+
+	" Open a split window to display a max of 2 messages
+	let height = min([4, 2 * len(messages)])
+	call s:OpenEmptyMessageWindow(height)
+
+	" Append text and go back to main window
+	call append(0, s:GetMessageLines(messages))
+	normal! Gddgg
+	wincmd k
+endfunction
 " }}}
+function! s:OpenEmptyMessageWindow(height) " {{{
+	let filepath = expand('%:p')
+	" Open a new split window to display the messages
+	rightbelow new
+	" Mark it as opened
+	call s:RegisterOpenedMessageWindow(filepath, 1)
+	" Set the height
+	execute 'resize ' . a:height
+	" Hide statusbar and line number
+	setlocal laststatus=0
+	setlocal statusline=''
+	setlocal noruler
+	setlocal nonumber
+	" Close it with q
+	nnoremap <silent> <buffer> q :quit!<CR>
+	nnoremap <silent> <buffer> <C-D> :quit!<CR>
+	nnoremap <silent> <buffer> <Esc> :quit!<CR>
+	" Mark it as closed when closed
+	execute 'au BufDelete <buffer> call s:RegisterOpenedMessageWindow(''' . filepath . ''', 0)'
+endfunction
+" }}}
+function! s:IsMessageWindowOpened() " {{{
+	" Decide if we need to open a new message window or if it is already opened
+	return get(g:arval_opened_message_windows, expand('%:p'), 0)
+endfunction
+" }}}
+function! s:RegisterOpenedMessageWindow(filepath, status) " {{{
+	" Save window message status of given filepath
+	let g:arval_opened_message_windows[a:filepath] = a:status
+endfunction
+" }}}
+function! s:CloseMessageWindow() " {{{
+		wincmd j
+		execute 'quit!'	
+endfunction
+" }}}
+function! s:GetMessageLines(messages) " {{{
+	" Return a List containing all the lines to display in the split window
+	let text = []
+	for message in a:messages
+		let line1 = toupper(strpart(message['type'], 0, 1)) . ':' . message['line'] . ' ' . message['function']
+		let line2 = message['text']
+		call add(text, line1)
+		call add(text, line2)
+	endfor
+	return text
+endfunction
+" }}}
+
+
