@@ -67,7 +67,7 @@ function! Arval_ParseRawOutput_ruby(output) " {{{
 		let i = i+1
 	endfor
 	" }}}
-
+	
 	" Implying other values {{{
 	let results['count']['total'] = results['count']['success'] + results['count']['failure'] + results['count']['error']
 	if (results['count']['total'] != 0 && results['count']['total'] == results['count']['success'])
@@ -91,7 +91,12 @@ function! Arval_ParseRawOutput_ruby(output) " {{{
 				continue
 			endif
 
+			" Default values for the message
 			let message = {}
+			let message['type'] =  'unknown'
+			let message['text'] =  'unknown'
+			let message['line'] =  'unknown'
+			let message['function'] = 'unknown'
 			
 			" Get the type
 			let message['type'] = substitute(line, '\v^\s+\d+\) (\w+):', '\L\1', '')
@@ -102,12 +107,20 @@ function! Arval_ParseRawOutput_ruby(output) " {{{
 				let message['text'] = lines[i+2]
 				
 				" For line number and function, we need to parse the i+3
+				" Note : Thrown errors might not have any function or line number, so
+				" we won't parse this line if the overview is too small to be parsed
 				let overview = lines[i+3]
-				" Set a comma-separated line and split it
-				let commaList = substitute(overview, '\v^\s+(/.[^:]*):(\d+):in `(.*)''', '\1,\2,\3', '')
-				let list = split(commaList, ',')
-				let message['line'] = list[1]
-				let message['function'] = list[2]
+				let overview_length = strlen(overview)
+				" Only if an overview is long enough {{{
+				if overview_length > 5 
+					" Set a comma-separated line and split it
+					let commaList = substitute(overview, '\v^\s+(/.[^:]*):(\d+):in `(.*)''', '\1,\2,\3', '')
+					let list = split(commaList, ',')
+					let message['line'] = list[1]
+					let message['function'] = list[2]
+				endif
+				" }}}
+
 			endif
 			" }}}
 			
